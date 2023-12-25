@@ -1,0 +1,52 @@
+name: Default Build project
+
+on: workflow_dispatch
+
+jobs:
+  buildForAllSupportedPlatforms:
+    name: Build for ${{ matrix.targetPlatform }}
+    runs-on: ubuntu-latest
+    # runs-on: LargeRunner  in case you need more space and power
+    strategy:
+      fail-fast: false
+      matrix:
+        targetPlatform:
+          - Android # Build an Android .apk standalone app.
+    steps:
+      # - name: Maximize build space
+      #   uses: easimon/maximize-build-space@master
+      #   with:
+      #     root-reserve-mb: 512
+      #     swap-size-mb: 1024
+      #     remove-haskell: 'true'
+      #     remove-docker-images: 'true'
+      #     remove-codeql: 'true'
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          lfs: true
+      - uses: actions/cache@v3
+        with:
+          path: Library
+          key: Library-${{ matrix.targetPlatform }}
+          restore-keys: Library-
+#       - name: Run tests
+#         uses: game-ci/unity-test-runner@v2.1.0
+#         env:
+#           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+#           UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+#           UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}
+#         with:
+#           githubToken: ${{ secrets.GITHUB_TOKEN }} 
+      - uses: game-ci/unity-builder@v3
+        env:
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+          UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}
+        with:
+          allowDirtyBuild: true
+          targetPlatform: ${{ matrix.targetPlatform }}
+      - uses: actions/upload-artifact@v3
+        with:
+          name: Build-${{ matrix.targetPlatform }}
+          path: build/${{ matrix.targetPlatform }}
